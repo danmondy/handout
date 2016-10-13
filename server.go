@@ -75,8 +75,9 @@ func ListFilesHandler(w http.ResponseWriter, r *http.Request, u User) {
 		if err != nil {
 			log.Fatal(err)
 		}
+		w.Write([]byte("<h1>Files</h1>"))
 		for _, f := range files {
-			w.Write([]byte(fmt.Sprintf("<a href=\"/edit?filepath=%[1]s/%[2]s\">File -> %[2]s<\a><br>", d, f.Name())))
+			w.Write([]byte(fmt.Sprintf("<a href=\"/edit?filepath=%[1]s/%[2]s\">%[1]s/%[2]s </a><br>", d, f.Name())))
 		}
 	}
 }

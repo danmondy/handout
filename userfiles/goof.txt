@@ -1,3 +1,6 @@
+#This is my face:tw-1f471:
+Also if my silouhette was lonely it would look like this :fa-user-plus:
+
 #Goob goob goob
 > test
 > test this is test
@@ -14,4 +17,10 @@ I also swim
 I am a person
 1. test
 1. test
-1. what
+1. what2016-10-13 13:07:31 星期四
+[========]
+
+[========]
+`**test test **`
+**test test **
+~~strike~~
