@@ -14,40 +14,14 @@ import (
 
 const DOCROOT = "public" //this is where the non compileable stuff goes - probably /var/www/handout/ or /etc/handout/public
 
-//==========TEMPLATES==========
-//THIS IS NOT A GENERATED WEBSITE AT THE MOMENT
-
-var templates *template.Template
-
-func init() {
-	FuncMap := BuildFuncMap()
-	fmt.Println("Docroot:", DOCROOT)
-	templates = template.Must(template.New("handout").Funcs(FuncMap).ParseGlob(fmt.Sprintf("%s/templates/*", DOCROOT)))
-}
-
-func BuildFuncMap() template.FuncMap {
-	return template.FuncMap{
-		"PrettyYear":  func(t time.Time) string { return t.Format("2006") },
-		"PrettyMonth": func(m time.Time) string { return m.Month().String()[0:3] + "." },
-		"Elipses":     func(s string) string { return fmt.Sprintf("%s...", []byte(s)[0:3]) },
-	}
-}
-
-func renderTemplate(w http.ResponseWriter, tmpl string, model interface{}) error {
-	err := templates.ExecuteTemplate(w, tmpl+".html", model)
-	return err
-}
-
-//----------------------------
-
 //========ROUTES========
 func main() {
 	r := mux.NewRouter()
 
 	//endpoints
 	r.HandleFunc("/", Auth(ListFilesHandler))
-	r.HandleFunc("/edit", Auth(EditFileHandler))
-	r.HandleFunc("/save", Auth(SaveFileHandler)).Methods("post")
+	r.HandleFunc("/edit", Auth(EditFileHandler)).Methods("get")
+	r.HandleFunc("/edit", Auth(SaveFileHandler)).Methods("post")
 
 	//static files
 	fs := http.FileServer(http.Dir(DOCROOT))
@@ -65,7 +39,8 @@ func main() {
 
 //----------------------
 
-//=======HANDLERS=======
+//=======ENDPOINTS/HANDLERS=======
+//EditFileHandler
 func ListFilesHandler(w http.ResponseWriter, r *http.Request, u User) {
 
 	//List every file that this user is allowed to edit.
@@ -82,6 +57,8 @@ func ListFilesHandler(w http.ResponseWriter, r *http.Request, u User) {
 	}
 }
 
+//EditFileHandler
+//method: get
 func EditFileHandler(w http.ResponseWriter, r *http.Request, u User) {
 	vals := r.URL.Query()
 	filepath := vals["filepath"][0]
@@ -104,7 +81,7 @@ func EditFileHandler(w http.ResponseWriter, r *http.Request, u User) {
 	//TODO: User templates or mustache or some tool to write html to the client instead of these bytes.
 }
 
-//SaveFileHandler: /save
+//SaveFileHandler: /edit
 //method: post
 //form
 func SaveFileHandler(w http.ResponseWriter, r *http.Request, user User) {
@@ -170,3 +147,29 @@ func Auth(h AuthedHandlerFunc) http.HandlerFunc {
 }
 
 //--------------------------
+
+//==========TEMPLATES==========
+//THIS IS NOT A GENERATED WEBSITE AT THE MOMENT
+
+var templates *template.Template
+
+func init() {
+	FuncMap := BuildFuncMap()
+	fmt.Println("Docroot:", DOCROOT)
+	templates = template.Must(template.New("handout").Funcs(FuncMap).ParseGlob(fmt.Sprintf("%s/templates/*", DOCROOT)))
+}
+
+func BuildFuncMap() template.FuncMap {
+	return template.FuncMap{
+		"PrettyYear":  func(t time.Time) string { return t.Format("2006") },
+		"PrettyMonth": func(m time.Time) string { return m.Month().String()[0:3] + "." },
+		"Elipses":     func(s string) string { return fmt.Sprintf("%s...", []byte(s)[0:3]) },
+	}
+}
+
+func renderTemplate(w http.ResponseWriter, tmpl string, model interface{}) error {
+	err := templates.ExecuteTemplate(w, tmpl+".html", model)
+	return err
+}
+
+//----------------------------
