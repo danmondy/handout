@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+    <head>
+	<link rel="stylesheet" href="/editormd/css/editormd.min.css" />
+	<title>Handout - let clients edit their markdown on your server </title>
+
+    </head>
+<body>
+
+<h1>HANDOUT</h1>
+<h3>a remote markdown editing solution</h3>
+
+
+<div id="editormd">
+    <textarea style="display:none;">{{.}}</textarea>
+</div>
+
+
+<script src="/js/jquery-3.1.1.min.js"></script>
+<script src="/editormd/editormd.min.js"></script>
+<script type="text/javascript">
+    $(function() {
+        var editor = editormd("editormd", {
+            id   : "editormd",
+            path : "/editormd/lib/" // Autoload modules mode, codemirror, marked... dependents libs path
+        });
+    });
+</script>
+</body>
+</html>

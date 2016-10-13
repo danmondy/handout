@@ -2,23 +2,58 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
-
-	//"time"
+	"time"
 	//"os"
 
 	"github.com/gorilla/mux"
 )
 
+//==========TEMPLATES==========
+const DOCROOT = "public"
+
+var templates *template.Template
+
+func init() {
+	FuncMap := BuildFuncMap()
+	fmt.Println("Docroot:", DOCROOT)
+	templates = template.Must(template.New("handout").Funcs(FuncMap).ParseGlob(fmt.Sprintf("%s/templates/*", DOCROOT)))
+}
+
+func BuildFuncMap() template.FuncMap {
+	return template.FuncMap{
+		"PrettyYear":  func(t time.Time) string { return t.Format("2006") },
+		"PrettyMonth": func(m time.Time) string { return m.Month().String()[0:3] + "." },
+		"Elipses":     func(s string) string { return fmt.Sprintf("%s...", []byte(s)[0:3]) },
+	}
+}
+
+func renderTemplate(w http.ResponseWriter, tmpl string, model interface{}) error {
+	err := templates.ExecuteTemplate(w, tmpl+".html", model)
+	return err
+}
+
+//----------------------------
+
 //========ROUTES========
 func main() {
-
 	r := mux.NewRouter()
+
+	//endpoints
 	r.HandleFunc("/list", Auth(ListFilesHandler))
 	r.HandleFunc("/edit", Auth(EditFileHandler))
 
+	//static files
+	fs := http.FileServer(http.Dir(DOCROOT))
+	r.PathPrefix("/img").Handler(fs)
+	r.PathPrefix("/css").Handler(fs)
+	r.PathPrefix("/editormd").Handler(fs)
+	r.PathPrefix("/js").Handler(fs)
+
+	log.Println("Listening on localhost:7777")
 	err := http.ListenAndServe("localhost:7777", r)
 	if err != nil {
 		log.Fatal(err)
@@ -49,9 +84,10 @@ func EditFileHandler(w http.ResponseWriter, r *http.Request, u User) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		w.Write(bytes)
+		renderTemplate(w, "edit", string(bytes))
 		return
 	}
+
 	w.Write([]byte("You are not allowed to edit this file."))
 	//TODO: User templates or mustache or some tool to write html to the client instead of these bytes.
 }
