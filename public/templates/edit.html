@@ -10,18 +10,21 @@
 <h1>HANDOUT</h1>
 <h3>a remote markdown editing solution</h3>
 
-
+<form action="save" method="post">
+    <input type="hidden" name="filepath" value="{{.FilePath}}">
+    <input type="submit" value="Save">
 <div id="editormd">
-    <textarea style="display:none;">{{.}}</textarea>
+    <textarea name="filecontent" style="display:none;">{{.FileContent}}</textarea>
 </div>
 
-
+</form>
 <script src="/js/jquery-3.1.1.min.js"></script>
 <script src="/editormd/editormd.min.js"></script>
 <script type="text/javascript">
     $(function() {
         var editor = editormd("editormd", {
             id   : "editormd",
+	    height: 640,
             path : "/editormd/lib/" // Autoload modules mode, codemirror, marked... dependents libs path
         });
     });

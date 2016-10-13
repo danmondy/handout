@@ -12,8 +12,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const DOCROOT = "public" //this is where the non compileable stuff goes - probably /var/www/handout/ or /etc/handout/public
+
 //==========TEMPLATES==========
-const DOCROOT = "public"
+//THIS IS NOT A GENERATED WEBSITE AT THE MOMENT
 
 var templates *template.Template
 
@@ -43,8 +45,9 @@ func main() {
 	r := mux.NewRouter()
 
 	//endpoints
-	r.HandleFunc("/list", Auth(ListFilesHandler))
+	r.HandleFunc("/", Auth(ListFilesHandler))
 	r.HandleFunc("/edit", Auth(EditFileHandler))
+	r.HandleFunc("/save", Auth(SaveFileHandler)).Methods("post")
 
 	//static files
 	fs := http.FileServer(http.Dir(DOCROOT))
@@ -64,6 +67,9 @@ func main() {
 
 //=======HANDLERS=======
 func ListFilesHandler(w http.ResponseWriter, r *http.Request, u User) {
+
+	//List every file that this user is allowed to edit.
+	//This needs to be rethought - this is temporary
 	for _, d := range u.Directories {
 		files, err := ioutil.ReadDir(d)
 		if err != nil {
@@ -84,7 +90,43 @@ func EditFileHandler(w http.ResponseWriter, r *http.Request, u User) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		renderTemplate(w, "edit", string(bytes))
+
+		model := struct { //make a quick anonymous struct for the views use
+			FilePath    string
+			FileContent string
+		}{filepath, string(bytes)}
+		renderTemplate(w, "edit", model)
+		return
+	}
+
+	w.Write([]byte("You are not allowed to edit this file."))
+	//TODO: User templates or mustache or some tool to write html to the client instead of these bytes.
+}
+
+//SaveFileHandler: /save
+//method: post
+//form
+func SaveFileHandler(w http.ResponseWriter, r *http.Request, user User) {
+	err := r.ParseForm()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	filepath := r.FormValue("filepath")
+	data := r.FormValue("filecontent")
+
+	fmt.Println(filepath)
+	if user.CanEditFile(filepath) {
+		err := ioutil.WriteFile(filepath, []byte(data), 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		model := struct { //make a quick anonymous struct for the views use
+			FilePath    string
+			FileContent string
+		}{filepath, data}
+		renderTemplate(w, "edit", model)
 		return
 	}
 
@@ -94,6 +136,7 @@ func EditFileHandler(w http.ResponseWriter, r *http.Request, u User) {
 
 //-------------------------------
 
+//========TEMPORARY (replace with config file) ==========
 func GetUser(r *http.Request) User {
 	u := User{
 		Name:        "Gabe",
@@ -104,14 +147,16 @@ func GetUser(r *http.Request) User {
 	return u
 }
 
+//-------------------------------------------------------
+
 //=======AUTHENTICATION=======
 
 type AuthedHandlerFunc func(w http.ResponseWriter, r *http.Request, u User)
 
-//Auth
+//Auth:
 //This ensures that only authed users can access a handler (endpoint).
 //It takes in a custom handler with an extra parameter (user) and fills that information in.
-//It then converts it to a function that golang can associate with an endpoint. (HandlerFunc)
+//It then converts it to a function that golang can associate with an endpoint (a HandlerFunc).
 //Wrapping the handlers this way takes the authentication logic out of each individual endpoint.
 func Auth(h AuthedHandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
