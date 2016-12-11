@@ -38,10 +38,10 @@ func (u User) CanEditFile(path string) bool {
 
 //TODO: this function is just a placeholder
 func ValidUser(u User) bool {
-	if u.Name == "Gabe" && u.Pword == "Hughes" {
-		return true
+	if u.Name == "invalid" {
+		return false
 	}
-	return false
+	return true
 }
 
 //-----------------------

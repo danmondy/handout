@@ -7,8 +7,8 @@ import (
 	"log"
 	"net/http"
 	"time"
-	//"os"
-
+	"strings"
+	"encoding/base64"
 	"github.com/gorilla/mux"
 )
 
@@ -19,9 +19,9 @@ func main() {
 	r := mux.NewRouter()
 
 	//endpoints
-	r.HandleFunc("/", Auth(ListFilesHandler))
-	r.HandleFunc("/edit", Auth(EditFileHandler)).Methods("get")
-	r.HandleFunc("/edit", Auth(SaveFileHandler)).Methods("post")
+	r.HandleFunc("/", BasicAuth(ListFilesHandler))
+	r.HandleFunc("/edit", BasicAuth(EditFileHandler)).Methods("get")
+	r.HandleFunc("/edit", BasicAuth(SaveFileHandler)).Methods("post")
 
 	//static files
 	fs := http.FileServer(http.Dir(DOCROOT))
@@ -62,7 +62,6 @@ func ListFilesHandler(w http.ResponseWriter, r *http.Request, u User) {
 func EditFileHandler(w http.ResponseWriter, r *http.Request, u User) {
 	vals := r.URL.Query()
 	filepath := vals["filepath"][0]
-
 	if u.CanEditFile(filepath) {
 		bytes, err := ioutil.ReadFile(filepath)
 		if err != nil {
@@ -114,15 +113,32 @@ func SaveFileHandler(w http.ResponseWriter, r *http.Request, user User) {
 
 //-------------------------------
 
-//========TEMPORARY (replace with config file) ==========
-func GetUser(r *http.Request) User {
-	u := User{
-		Name:        "Gabe",
-		Pword:       "Hughes",
-		Directories: []string{"userfiles"},
-		Files:       []string{"userfiles/goober.txt"},
+//========TEMPORARY==========
+func GetUsers() []User {
+	users := []User{
+		User{
+			Name:        "Gabe",
+			Pword:       "Hughes",
+			Directories: []string{"userfiles"},
+			Files:       []string{},
+		},
 	}
-	return u
+	return users
+}
+
+func GetUser(username string, password string) User {
+	users := GetUsers()
+	for _, u := range users {
+		if (u.Name == username && u.Pword == password) {
+			return u
+		}
+	}
+	return User{
+		Name:"invalid",
+		Pword:"invalid",
+		Directories: []string{},
+		Files: []string{},
+	}
 }
 
 //-------------------------------------------------------
@@ -136,15 +152,40 @@ type AuthedHandlerFunc func(w http.ResponseWriter, r *http.Request, u User)
 //It takes in a custom handler with an extra parameter (user) and fills that information in.
 //It then converts it to a function that golang can associate with an endpoint (a HandlerFunc).
 //Wrapping the handlers this way takes the authentication logic out of each individual endpoint.
-func Auth(h AuthedHandlerFunc) http.HandlerFunc {
+func BasicAuth(h AuthedHandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		u := GetUser(r)
+		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+		// TokenIndex:      0        1
+		// Authorization: Basic QJSDOGJANBJZJ==
+		authTokens := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
+		if len(authTokens) != 2 {
+			http.Error(w, "Not authorized", 401)
+			return
+		}
+		usernamepassword, err := base64.StdEncoding.DecodeString(authTokens[1])
+		if err != nil {
+			http.Error(w, err.Error(), 401)
+			return
+		}
+		pair := strings.SplitN(string(usernamepassword), ":", 2)
+		if len(pair) != 2 {
+			http.Error(w, "Not authorized", 401)
+			return
+		}
+		username := pair[0]
+		password := pair[1]
+		log.Println(username);
+		log.Println(password);
+		u := GetUser(username, password)
 		if ValidUser(u) {
 			h(w, r, u)
+			return
 		}
+		http.Error(w, "Not authorized", 401)
 		return
 	}
 }
+
 
 //--------------------------
 
