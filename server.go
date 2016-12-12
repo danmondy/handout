@@ -5,10 +5,12 @@ import (
 	"html/template"
 	"io/ioutil"
 	"log"
+	"strconv"
 	"net/http"
 	"time"
 	"strings"
 	"encoding/base64"
+	"os"
 	"github.com/gorilla/mux"
 )
 
@@ -16,6 +18,20 @@ const DOCROOT = "public" //this is where the non compileable stuff goes - probab
 
 //========ROUTES========
 func main() {
+	port := 8080;
+	portString := fmt.Sprint(port)
+	if len(os.Args) >= 3 {
+		log.Println("To many arguments");
+		return
+	}
+	if len(os.Args) == 2 {
+		s := os.Args[1]
+		p, _ := strconv.ParseInt(s, 10, 64)
+		if p >= 0 && p <= 10000 {
+			port := p
+			portString = fmt.Sprint(port)
+		}
+	}
 	r := mux.NewRouter()
 
 	//endpoints
@@ -30,8 +46,8 @@ func main() {
 	r.PathPrefix("/editormd").Handler(fs)
 	r.PathPrefix("/js").Handler(fs)
 
-	log.Println("Listening on localhost:7777")
-	err := http.ListenAndServe("localhost:7777", r)
+	log.Println("Listening on localhost:"+portString)
+	err := http.ListenAndServe("localhost:"+portString, r)
 	if err != nil {
 		log.Fatal(err)
 	}
