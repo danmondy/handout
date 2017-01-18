@@ -11,10 +11,14 @@ import (
 	"strings"
 	"encoding/base64"
 	"os"
+	"bufio"
+	"crypto/sha1"
 	"github.com/gorilla/mux"
 )
 
 const DOCROOT = "public" //this is where the non compileable stuff goes - probably /var/www/handout/ or /etc/handout/public
+var usersFilename = ".handout.users"
+var users []User
 
 //========ROUTES========
 func main() {
@@ -58,12 +62,13 @@ func main() {
 //=======ENDPOINTS/HANDLERS=======
 //EditFileHandler
 func ListFilesHandler(w http.ResponseWriter, r *http.Request, u User) {
-
 	//List every file that this user is allowed to edit.
 	//This needs to be rethought - this is temporary
 	for _, d := range u.Directories {
 		files, err := ioutil.ReadDir(d)
 		if err != nil {
+			log.Println(d)
+			log.Println(files)
 			log.Fatal(err)
 		}
 		w.Write([]byte("<h1>Files</h1>"))
@@ -129,24 +134,10 @@ func SaveFileHandler(w http.ResponseWriter, r *http.Request, user User) {
 
 //-------------------------------
 
-//========TEMPORARY==========
-func GetUsers() []User {
-	users := []User{
-		User{
-			Name:        "Gabe",
-			Pword:       "Hughes",
-			Directories: []string{"userfiles"},
-			Files:       []string{},
-		},
-	}
-	return users
-}
-
-func GetUser(username string, password string) User {
-	users := GetUsers()
+func GetUser(username string, password string) (User, bool) {
 	for _, u := range users {
 		if (u.Name == username && u.Pword == password) {
-			return u
+			return u, true
 		}
 	}
 	return User{
@@ -154,7 +145,7 @@ func GetUser(username string, password string) User {
 		Pword:"invalid",
 		Directories: []string{},
 		Files: []string{},
-	}
+	}, false
 }
 
 //-------------------------------------------------------
@@ -190,10 +181,12 @@ func BasicAuth(h AuthedHandlerFunc) http.HandlerFunc {
 		}
 		username := pair[0]
 		password := pair[1]
+		passwordHash := sha1.Sum([]byte(password))
+		passwordHashHex := fmt.Sprintf("%x", passwordHash)
 		log.Println(username);
-		log.Println(password);
-		u := GetUser(username, password)
-		if ValidUser(u) {
+		log.Println(passwordHashHex);
+		u, isUserValid := GetUser(username, passwordHashHex)
+		if isUserValid {
 			h(w, r, u)
 			return
 		}
@@ -210,10 +203,67 @@ func BasicAuth(h AuthedHandlerFunc) http.HandlerFunc {
 
 var templates *template.Template
 
+func buildUsers() {
+	// Build Users
+	if _, err := os.Stat(usersFilename); os.IsNotExist(err) {
+		fmt.Println("WARNING: No users file setup. A default users file was created")
+		password := []byte("password")
+		passwordHash := sha1.Sum(password)
+		passwordHashHex := fmt.Sprintf("%x", passwordHash)
+		admin := []byte("admin\t"+passwordHashHex+"\t\t\n")
+		err := ioutil.WriteFile(usersFilename, admin, 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	file, err := os.Open(usersFilename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	userCount := 0
+	for scanner.Scan() {
+		line := scanner.Text()
+		if len(line) > 4 {
+			userInfo := strings.Fields(line)
+			var directories []string = []string{""}
+			if len(userInfo) >= 3 && strings.Contains(userInfo[2], ":") {
+				directories = strings.Split(userInfo[2], ":")
+			} else {
+				if len(userInfo) >= 3 {
+					directories = []string{userInfo[2]}
+				}
+			}
+			var files []string = []string{""}
+			if len(userInfo) >= 4 && strings.Contains(userInfo[3], ":") {
+				files = strings.Split(userInfo[3], ":")
+			} else {
+				if len(userInfo) >= 4 {
+					files = []string{userInfo[3]}
+				}
+			}
+			if len(userInfo) >=2 {
+				user := User{
+					Name:        userInfo[0],
+					Pword:       userInfo[1],
+					Directories: directories,
+					Files:       files,
+				}
+				log.Printf("Allowing User: %v", user)
+				users = append(users, user)
+				userCount += 1
+			}
+		}
+	}
+	log.Printf("Allowing a total of %d users.", userCount)
+}
+
 func init() {
 	FuncMap := BuildFuncMap()
 	fmt.Println("Docroot:", DOCROOT)
 	templates = template.Must(template.New("handout").Funcs(FuncMap).ParseGlob(fmt.Sprintf("%s/templates/*", DOCROOT)))
+	buildUsers()
 }
 
 func BuildFuncMap() template.FuncMap {

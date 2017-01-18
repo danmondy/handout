@@ -36,12 +36,4 @@ func (u User) CanEditFile(path string) bool {
 	return false
 }
 
-//TODO: this function is just a placeholder
-func ValidUser(u User) bool {
-	if u.Name == "invalid" {
-		return false
-	}
-	return true
-}
-
 //-----------------------

@@ -8,11 +8,11 @@
 
 <h1>HANDOUT</h1>
 <h3>a remote markdown editing solution</h3>
-<a href="/" style="margin:20px;">BACK</a>
 
 <form action="/edit" method="post">
     <input type="hidden" name="filepath" value="{{.FilePath}}">
     <input type="submit" value="Save">
+    <a href="/" style="color:red;">back to files</a>
     <div id="editormd">
       <textarea name="filecontent" style="display:none;">{{.FileContent}}</textarea>
     </div>
