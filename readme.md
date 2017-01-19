@@ -6,6 +6,7 @@ This is a browser-based editor to allow contributors access to edit speicific fi
 1. Uses editormd for editing md files and previewing there content.
 1. Editing and saving files is working.
 1. Has a crude implementation permissions and authentication that doesn't work for real world applications.
+1. Uses go-bindata (https://github.com/jteeuwen/go-bindata) for binding resources to binary.
 
 ##TODO:##
 ###Make choices on the follow technologies:###

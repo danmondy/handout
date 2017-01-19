@@ -1,0 +1,6 @@
+########################################################################################
+# go-bindata is a binary generated from golangs dependency management.
+#            it is located at:
+#            https://github.com/jteeuwen/go-bindata
+########################################################################################
+go-bindata public/...

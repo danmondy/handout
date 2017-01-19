@@ -14,6 +14,7 @@ import (
 	"bufio"
 	"crypto/sha1"
 	"github.com/gorilla/mux"
+	"github.com/elazarl/go-bindata-assetfs"
 )
 
 const DOCROOT = "public" //this is where the non compileable stuff goes - probably /var/www/handout/ or /etc/handout/public
@@ -43,12 +44,19 @@ func main() {
 	r.HandleFunc("/edit", BasicAuth(EditFileHandler)).Methods("get")
 	r.HandleFunc("/edit", BasicAuth(SaveFileHandler)).Methods("post")
 
-	//static files
-	fs := http.FileServer(http.Dir(DOCROOT))
+	
+	//static resources
+	fs := http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: AssetInfo, Prefix: "/public"})
 	r.PathPrefix("/img").Handler(fs)
 	r.PathPrefix("/css").Handler(fs)
 	r.PathPrefix("/editormd").Handler(fs)
 	r.PathPrefix("/js").Handler(fs)
+	//static files
+	//fs := http.FileServer(http.Dir(DOCROOT))
+	// r.PathPrefix("/img").Handler(fs)
+	// r.PathPrefix("/css").Handler(fs)
+	// r.PathPrefix("/editormd").Handler(fs)
+	// r.PathPrefix("/js").Handler(fs)
 
 	log.Println("Listening on localhost:"+portString)
 	err := http.ListenAndServe("localhost:"+portString, r)
@@ -93,7 +101,7 @@ func EditFileHandler(w http.ResponseWriter, r *http.Request, u User) {
 			FilePath    string
 			FileContent string
 		}{filepath, string(bytes)}
-		renderTemplate(w, "edit", model)
+		renderTemplate(w, "handout", model)
 		return
 	}
 
@@ -124,7 +132,7 @@ func SaveFileHandler(w http.ResponseWriter, r *http.Request, user User) {
 			FilePath    string
 			FileContent string
 		}{filepath, data}
-		renderTemplate(w, "edit", model)
+		renderTemplate(w, "handout", model)
 		return
 	}
 
@@ -262,7 +270,13 @@ func buildUsers() {
 func init() {
 	FuncMap := BuildFuncMap()
 	fmt.Println("Docroot:", DOCROOT)
-	templates = template.Must(template.New("handout").Funcs(FuncMap).ParseGlob(fmt.Sprintf("%s/templates/*", DOCROOT)))
+	pathToResource := "public/templates/edit.html"
+	bytes, err := Asset(pathToResource)
+	if err != nil {
+		log.Fatal(err)
+	}
+	templateString := string(bytes)
+	templates = template.Must(template.New("handout").Funcs(FuncMap).Parse(templateString))
 	buildUsers()
 }
 
@@ -275,7 +289,7 @@ func BuildFuncMap() template.FuncMap {
 }
 
 func renderTemplate(w http.ResponseWriter, tmpl string, model interface{}) error {
-	err := templates.ExecuteTemplate(w, tmpl+".html", model)
+	err := templates.ExecuteTemplate(w, tmpl, model)
 	return err
 }
 
