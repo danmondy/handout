@@ -1,34 +1,30 @@
 <!DOCTYPE html>
 <html>
     <head>
-	<link rel="stylesheet" href="/editormd/css/editormd.min.css" />
 	<title>Handout - let clients edit their markdown on your server </title>
     </head>
 <body>
 
-<h1>HANDOUT</h1>
-<h3>a remote markdown editing solution</h3>
-
-<form action="/edit" method="post">
+<form id="edit-form" action="/edit" method="post">
     <input type="hidden" name="filepath" value="{{.FilePath}}">
     <input type="submit" value="Save">
     <a href="/" style="color:red;">back to files</a>
-    <div id="editormd">
-      <textarea name="filecontent" style="display:none;">{{.FileContent}}</textarea>
-    </div>
+    <textarea id="summernote" name="filecontent" style="display:none;">{{.FileContent}}</textarea>
 </form>
+
 <script src="/js/jquery-3.1.1.min.js"></script>
-<script src="/editormd/editormd.min.js"></script>
-<script src="/editormd/languages/en.js"></script>
-<script type="text/javascript">
-    $(function() {
-        var editor = editormd("editormd", {
-            id   : "editormd",
-	    autoHeight: true,
-	    emoji: true,
-            path : "/editormd/lib/" // Autoload modules mode, codemirror, marked... dependents libs path
-        });
-    });
+
+<!-- SUMMERNOTE -->
+<!-- include libraries(jQuery, bootstrap) -->
+<link href="http://netdna.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.css" rel="stylesheet">
+<script src="http://netdna.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.js"></script> 
+<link href="/summernote/summernote.css" rel="stylesheet">
+<script src="/summernote/summernote.js"></script>
+<script>
+$(document).ready(function() {
+  $('#summernote').summernote();
+  $('#summernote').summernote('fullscreen.toggle');
+});
 </script>
 </body>
 </html>

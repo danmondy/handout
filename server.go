@@ -49,7 +49,7 @@ func main() {
 	fs := http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: AssetInfo, Prefix: "/public"})
 	r.PathPrefix("/img").Handler(fs)
 	r.PathPrefix("/css").Handler(fs)
-	r.PathPrefix("/editormd").Handler(fs)
+	r.PathPrefix("/summernote").Handler(fs)
 	r.PathPrefix("/js").Handler(fs)
 	//static files
 	//fs := http.FileServer(http.Dir(DOCROOT))
