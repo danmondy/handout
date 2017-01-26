@@ -27,7 +27,6 @@ func (u User) CanEditFile(path string) bool {
 			return true
 		}
 	}
-
 	for _, uf := range u.Files {
 		if uf == path {
 			return true

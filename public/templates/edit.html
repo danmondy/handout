@@ -7,8 +7,8 @@
 
 <form id="edit-form" action="/edit" method="post">
     <input type="hidden" name="filepath" value="{{.FilePath}}">
-    <input type="submit" value="Save">
-    <a href="/" style="color:red;">back to files</a>
+    <input id="submit-button" type="submit" value="Save" style="display:none;">
+    <a id="back-button" href="/" style="display:none;">back to files</a>
     <textarea id="summernote" name="filecontent" style="display:none;">{{.FileContent}}</textarea>
 </form>
 
@@ -22,8 +22,51 @@
 <script src="/summernote/summernote.js"></script>
 <script>
 $(document).ready(function() {
-  $('#summernote').summernote();
-  $('#summernote').summernote('fullscreen.toggle');
+var SaveButton = function(context) {
+  var ui = $.summernote.ui;
+  var button = ui.button({
+    contents: '<i class="fa fa-pencil"/> Save',
+    tooltip: 'Save File',
+    click: function() {
+      $("#submit-button").click();
+    }
+  });
+
+  return button.render();
+}
+var BackToFilesButton = function(context) {
+  var ui = $.summernote.ui;
+  var button = ui.button({
+    contents: '<i class="fa fa-pencil"/> Back',
+    tooltip: 'Return To File Listing',
+    click: function() {
+      $("#back-button")[0].click();
+    }
+  });
+  return button.render();
+}
+$(document).ready(function() {
+  $('#summernote').summernote({
+    toolbar: [
+      ['handout', ['customsave', 'customback']],
+      ['fonts', ['fontname', 'fontsize', 'color', 'style']],
+      ['style', ['bold', 'italic', 'underline']],
+      ['para', ['ul', 'ol', 'paragraph']],
+      ['insert', ['picture', 'link', 'video', 'table', 'hr']],
+      ['history', ['undo', 'redo']],
+      ['view', ['codeview']]
+    ],
+    buttons: {
+      customsave: SaveButton,
+      customback: BackToFilesButton
+    },
+    callbacks: {
+      onInit: function(e) {
+        $("#summernote").summernote("fullscreen.toggle");
+      }
+    }
+  });
+});
 });
 </script>
 </body>

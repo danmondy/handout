@@ -51,13 +51,6 @@ func main() {
 	r.PathPrefix("/css").Handler(fs)
 	r.PathPrefix("/summernote").Handler(fs)
 	r.PathPrefix("/js").Handler(fs)
-	//static files
-	//fs := http.FileServer(http.Dir(DOCROOT))
-	// r.PathPrefix("/img").Handler(fs)
-	// r.PathPrefix("/css").Handler(fs)
-	// r.PathPrefix("/editormd").Handler(fs)
-	// r.PathPrefix("/js").Handler(fs)
-
 	log.Println("Listening on localhost:"+portString)
 	err := http.ListenAndServe("localhost:"+portString, r)
 	if err != nil {
@@ -72,16 +65,31 @@ func main() {
 func ListFilesHandler(w http.ResponseWriter, r *http.Request, u User) {
 	//List every file that this user is allowed to edit.
 	//This needs to be rethought - this is temporary
+	w.Write([]byte("<h1>Files</h1>"))
+	for _, f := range u.Files {
+		w.Write([]byte(fmt.Sprintf("<a href=\"/edit?filepath=%[1]s\">%[1]s </a><br>", f)))
+	}
 	for _, d := range u.Directories {
+		if d == "none" || d == "0" || d == "nill" || d == "null" {
+			continue
+		}
 		files, err := ioutil.ReadDir(d)
 		if err != nil {
 			log.Println(d)
 			log.Println(files)
 			log.Fatal(err)
 		}
-		w.Write([]byte("<h1>Files</h1>"))
 		for _, f := range files {
-			w.Write([]byte(fmt.Sprintf("<a href=\"/edit?filepath=%[1]s/%[2]s\">%[1]s/%[2]s </a><br>", d, f.Name())))
+			fullpath := fmt.Sprintf("%[1]s%[2]s", d, f.Name())
+			found := false
+			for _, f := range u.Files {
+				if f == fullpath {
+					found = true
+				}
+			}
+			if !found {
+				w.Write([]byte(fmt.Sprintf("<a href=\"/edit?filepath=%[1]s\">%[1]s </a><br>", fullpath)))
+			}
 		}
 	}
 }
