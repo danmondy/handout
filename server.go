@@ -52,7 +52,7 @@ func main() {
 	r.PathPrefix("/summernote").Handler(fs)
 	r.PathPrefix("/js").Handler(fs)
 	log.Println("Listening on localhost:"+portString)
-	err := http.ListenAndServe("localhost:"+portString, r)
+	err := http.ListenAndServe(":"+portString, r)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -99,6 +99,7 @@ func ListFilesHandler(w http.ResponseWriter, r *http.Request, u User) {
 func EditFileHandler(w http.ResponseWriter, r *http.Request, u User) {
 	vals := r.URL.Query()
 	filepath := vals["filepath"][0]
+	fmt.Println(filepath)
 	if u.CanEditFile(filepath) {
 		bytes, err := ioutil.ReadFile(filepath)
 		if err != nil {
@@ -129,7 +130,6 @@ func SaveFileHandler(w http.ResponseWriter, r *http.Request, user User) {
 	filepath := r.FormValue("filepath")
 	data := r.FormValue("filecontent")
 
-	fmt.Println(filepath)
 	if user.CanEditFile(filepath) {
 		err := ioutil.WriteFile(filepath, []byte(data), 0644)
 		if err != nil {
