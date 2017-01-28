@@ -65,9 +65,18 @@ func main() {
 func ListFilesHandler(w http.ResponseWriter, r *http.Request, u User) {
 	//List every file that this user is allowed to edit.
 	//This needs to be rethought - this is temporary
-	w.Write([]byte("<h1>Files</h1>"))
+	w.Write([]byte("<!DOCTYPE html>\n"))
+	w.Write([]byte("<html lang=\"en\">\n"))
+	w.Write([]byte("<body>\n"))
+	w.Write([]byte("<script src=\"/js/jquery-3.1.1.min.js\"></script>"))
+	w.Write([]byte("<link href=\"http://netdna.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.css\" rel=\"stylesheet\">\n"))
+	w.Write([]byte("<script src=\"http://netdna.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.js\"></script>\n"))
+	w.Write([]byte("<h1 class=\"display-4\" style=\"position:relative;left:15px;\">Files</h1>\n"))
+	w.Write([]byte("<div class=\"list-group\">\n"))
 	for _, f := range u.Files {
-		w.Write([]byte(fmt.Sprintf("<a href=\"/edit?filepath=%[1]s\">%[1]s </a><br>", f)))
+		if strings.Compare(f, "") != 0 {
+			w.Write([]byte(fmt.Sprintf("<a href=\"/edit?filepath=%[1]s\" class=\"list-group-item list-group-item-success\">%[1]s </a>", f)))
+		}
 	}
 	for _, d := range u.Directories {
 		if d == "none" || d == "0" || d == "nill" || d == "null" {
@@ -88,10 +97,13 @@ func ListFilesHandler(w http.ResponseWriter, r *http.Request, u User) {
 				}
 			}
 			if !found {
-				w.Write([]byte(fmt.Sprintf("<a href=\"/edit?filepath=%[1]s\">%[1]s </a><br>", fullpath)))
+				w.Write([]byte(fmt.Sprintf("<a href=\"/edit?filepath=%[1]s\" class=\"list-group-item list-group-item-success\">%[1]s </a>", fullpath)))
 			}
 		}
 	}
+	w.Write([]byte("</div>\n"))
+	w.Write([]byte("</body>\n"))
+	w.Write([]byte("</html>\n"))
 }
 
 //EditFileHandler
