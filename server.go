@@ -40,10 +40,14 @@ func main() {
 	r := mux.NewRouter()
 
 	//endpoints
-	r.HandleFunc("/", BasicAuth(ListFilesHandler))
-	r.HandleFunc("/edit", BasicAuth(EditFileHandler)).Methods("get")
-	r.HandleFunc("/edit", BasicAuth(SaveFileHandler)).Methods("post")
-
+	r.HandleFunc("/file", BasicAuth(ListFilesHandler))
+	r.HandleFunc("/file/edit", BasicAuth(EditFileHandler)).Methods("get")
+	r.HandleFunc("/file/edit", BasicAuth(SaveFileHandler)).Methods("post")
+	
+	r.HandleFunc("/file/upload", BasicAuth(UploadFileHandler)).Methods("post")
+	r.HandleFunc("/file/delete", BasicAuth(DeleteFileHandler)).Methods("post")
+	r.HandleFunc("/file/rename", BasicAuth(RenameFileHandler)).Methods("post")
+	r.HandleFunc("/file/create", BasicAuth(CreateFileHandler)).Methods("post")
 	
 	//static resources
 	fs := http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: AssetInfo, Prefix: "/public"})
@@ -75,7 +79,7 @@ func ListFilesHandler(w http.ResponseWriter, r *http.Request, u User) {
 	w.Write([]byte("<div class=\"list-group\">\n"))
 	for _, f := range u.Files {
 		if strings.Compare(f, "") != 0 {
-			w.Write([]byte(fmt.Sprintf("<a href=\"/edit?filepath=%[1]s\" class=\"list-group-item list-group-item-success\">%[1]s </a>", f)))
+			w.Write([]byte(fmt.Sprintf("<a href=\"/file/edit?filepath=%[1]s\" class=\"list-group-item list-group-item-success\">%[1]s </a>", f)))
 		}
 	}
 	for _, d := range u.Directories {
@@ -97,7 +101,7 @@ func ListFilesHandler(w http.ResponseWriter, r *http.Request, u User) {
 				}
 			}
 			if !found {
-				w.Write([]byte(fmt.Sprintf("<a href=\"/edit?filepath=%[1]s\" class=\"list-group-item list-group-item-success\">%[1]s </a>", fullpath)))
+				w.Write([]byte(fmt.Sprintf("<a href=\"/file/edit?filepath=%[1]s\" class=\"list-group-item list-group-item-success\">%[1]s </a>", fullpath)))
 			}
 		}
 	}
@@ -158,6 +162,64 @@ func SaveFileHandler(w http.ResponseWriter, r *http.Request, user User) {
 
 	w.Write([]byte("You are not allowed to edit this file."))
 	//TODO: User templates or mustache or some tool to write html to the client instead of these bytes.
+}
+
+func CreateFileHandler(w http.ResponseWriter, r *http.Request, u User) {
+
+}
+
+func RenameFileHandler(w http.ResponseWriter, r *http.Request, u User) {
+	vals := r.URL.Query()
+	directory := vals["directory"][0]
+	oldFilename := vals["oldfilename"][0]
+	newFilename := vals["newfilename"][0]
+	log.Println("RENAMEDIRECTORY: " + directory + "     RENAME FROM: " + oldFilename + "     RENAME TO: " + newFilename);
+	return
+}
+
+func DeleteFileHandler(w http.ResponseWriter, r *http.Request, u User) {
+	vals := r.URL.Query()
+	filepath := vals["filepath"][0]
+	log.Println("DELETE : " + filepath);
+	return
+}
+
+func UploadFileHandler(w http.ResponseWriter, r *http.Request, u User) {
+	// the FormFile function takes in the POST input id file
+	//file, header, err := r.FormFile("file")
+	vals := r.URL.Query()
+	targetFilename := vals["filename"][0]
+	targetDirectory := vals["directory"][0]
+	log.Println("UPLOAD TARGET: " + targetFilename + "      DIRECTORY: " + targetDirectory);
+	return
+
+	// if err != nil {
+	// 	fmt.Fprintln(w, err)
+        // return
+	// }
+	// defer file.Close()
+	// // Validate Target Directory exist and has permissions.
+	// validDir := false
+	// for _, d := range u.Directories {
+	// 	if strings.Compare(d, targetDirectory) == 0 {
+	// 		validDir = true
+	// 	}
+	// }
+	// out, err := os.Create("/tmp/uploadedfile")
+	// if err != nil {
+	// 	fmt.Fprintf(w, "Unable to create the file for writing. Check your write access privilege")
+        // return
+	// }
+	// defer out.Close()
+
+	// // write the content from POST to the file
+	// _, err = io.Copy(out, file)
+	// if err != nil {
+	// 	fmt.Fprintln(w, err)
+	// }
+
+	// fmt.Fprintf(w, "File uploaded successfully : ")
+	// fmt.Fprintf(w, header.Filename)
 }
 
 //-------------------------------
